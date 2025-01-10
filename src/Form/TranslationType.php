@@ -20,7 +20,7 @@ class TranslationType extends AbstractType
             ->add('content')
             ->add('language', EntityType::class, [
                 'class' => Language::class,
-                'choice_label' => 'name',
+                'choice_label' => 'nam',
             ])
         ;
     }
