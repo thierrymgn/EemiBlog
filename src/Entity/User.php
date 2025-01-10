@@ -7,12 +7,14 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -48,16 +50,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $bio = null;
 
     #[ORM\Column]
-    private ?bool $is_verified = null;
-
-    #[ORM\Column]
     private ?bool $is_banned = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $reset_token = null;
-
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $reset_token_expires_at = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $last_login = null;
@@ -88,6 +81,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'publisher', orphanRemoval: true)]
     private Collection $comments;
+
+    #[ORM\Column]
+    private bool $is_verified = false;
 
     public function __construct()
     {
@@ -239,30 +235,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setBanned(bool $is_banned): static
     {
         $this->is_banned = $is_banned;
-
-        return $this;
-    }
-
-    public function getResetToken(): ?string
-    {
-        return $this->reset_token;
-    }
-
-    public function setResetToken(?string $reset_token): static
-    {
-        $this->reset_token = $reset_token;
-
-        return $this;
-    }
-
-    public function getResetTokenExpiresAt(): ?\DateTimeInterface
-    {
-        return $this->reset_token_expires_at;
-    }
-
-    public function setResetTokenExpiresAt(?\DateTimeInterface $reset_token_expires_at): static
-    {
-        $this->reset_token_expires_at = $reset_token_expires_at;
 
         return $this;
     }
