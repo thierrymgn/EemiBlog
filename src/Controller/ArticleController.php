@@ -4,11 +4,14 @@ namespace App\Controller;
 
 use App\Entity\Article;
 use App\Entity\Comment;
+use App\Entity\Media;
 use App\Form\ArticleType;
 use App\Form\UserCommentType;
 use App\Repository\ArticleRepository;
+use App\Repository\MediaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -41,6 +44,33 @@ final class ArticleController extends AbstractController
             $article->setPublishedAt(new \DateTimeImmutable());
             $article->setCreatedAt(new \DateTimeImmutable());
             $article->setUpdatedAt(new \DateTimeImmutable());
+
+            if ($imageFile = $form->get('imageFile')->getData()) {
+                $newFilename = uniqid() . '.' . $imageFile->guessExtension();
+
+                $media = new Media();
+                $media->setName($newFilename);
+                $media->setFileName($newFilename);
+                $media->setMimeType($imageFile->getMimeType());
+                $media->setSize($imageFile->getSize());
+
+                try {
+                    $imageFile->move(
+                        $this->getParameter('media_directory'),
+                        $newFilename
+                    );
+
+                    $media->setPath('/uploads/media/' . $newFilename);
+                    $media->setCreatedAt(new \DateTimeImmutable());
+                    $media->setUpdatedAt(new \DateTimeImmutable());
+
+                    $entityManager->persist($media);
+
+                    $article->setFeaturedImage($media->getPath());
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'Une erreur est survenue lors de l\'upload du fichier : ' . $e->getMessage());
+                }
+            }
 
             $entityManager->persist($article);
             $entityManager->flush();
@@ -91,7 +121,7 @@ final class ArticleController extends AbstractController
 
         $similarArticles = $articleRepository->findSimilarArticles($article);
 
-        return $this->render('article/show.html.twig', [
+        return $this->render('article/slug.html.twig', [
             'article' => $article,
             'similarArticles' => $similarArticles,
             'commentForm' => $form,
@@ -99,13 +129,50 @@ final class ArticleController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_article_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Article $article, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, Article $article, EntityManagerInterface $entityManager, MediaRepository $mediaRepository): Response
     {
         $form = $this->createForm(ArticleType::class, $article);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $article->setUpdatedAt(new \DateTimeImmutable());
+
+            if ($imageFile = $form->get('imageFile')->getData()) {
+                $articleMedia = $mediaRepository->findOneBy(['path' => $article->getFeaturedImage()]);
+                if ($oldMedia = $articleMedia) {
+                    $oldFilePath = $this->getParameter('media_directory').'/'.$oldMedia->getFileName();
+                    if (file_exists($oldFilePath)) {
+                        unlink($oldFilePath);
+                    }
+                    $entityManager->remove($oldMedia);
+                }
+
+                $newFilename = uniqid() . '.' . $imageFile->guessExtension();
+
+                $media = new Media();
+                $media->setName($newFilename);
+                $media->setFileName($newFilename);
+                $media->setMimeType($imageFile->getMimeType());
+                $media->setSize($imageFile->getSize());
+
+                try {
+                    $imageFile->move(
+                        $this->getParameter('media_directory'),
+                        $newFilename
+                    );
+
+                    $media->setPath('/uploads/media/' . $newFilename);
+                    $media->setCreatedAt(new \DateTimeImmutable());
+                    $media->setUpdatedAt(new \DateTimeImmutable());
+
+                    $entityManager->persist($media);
+
+                    $article->setFeaturedImage($media->getPath());
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'Une erreur est survenue lors de l\'upload du fichier : ' . $e->getMessage());
+                }
+            }
+
             $entityManager->flush();
 
             return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);

@@ -39,7 +39,7 @@
                 <td>{{ article.createdAt ? article.createdAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>{{ article.updatedAt ? article.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>
-                    <a href="{{ path('app_article_show', {'id': article.id}) }}">show</a>
+{#                    <a href="{{ path('app_article_show', {'id': article.id}) }}">show</a>#}
                     <a href="{{ path('app_article_edit', {'id': article.id}) }}">edit</a>
                 </td>
             </tr>
