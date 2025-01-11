@@ -13,6 +13,9 @@
         {% endblock %}
     </head>
     <body>
+        {% if show_header is not defined or show_header %}
+            {% include 'partials/_header.html.twig' %}
+        {% endif %}
         {% block body %}{% endblock %}
     </body>
 </html>

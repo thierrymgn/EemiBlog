@@ -92,4 +92,38 @@ final class CommentController extends AbstractController
 
         return $this->redirectToRoute('app_comment_index', [], Response::HTTP_SEE_OTHER);
     }
+
+    #[Route('/{id}/reply', name: 'app_comment_reply', methods: ['POST'])]
+    public function reply(Comment $parentComment, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        if (!$this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $content = $request->request->get('content');
+        if (!$content) {
+            $this->addFlash('error', 'Le contenu du commentaire ne peut pas être vide');
+            return $this->redirectToRoute('app_article_show', ['slug' => $parentComment->getArticle()->getSlug()]);
+        }
+
+        $reply = new Comment();
+        $reply->setContent($content);
+        $reply->setArticle($parentComment->getArticle());
+        $reply->setPublisher($this->getUser());
+        $reply->setParent($parentComment);
+        $reply->setLevel($parentComment->getLevel() + 1);
+        $reply->setApproved(true);
+        $reply->setCreatedAt(new \DateTimeImmutable());
+        $reply->setUpdatedAt(new \DateTimeImmutable());
+        $reply->setIpAddress($request->getClientIp());
+        $reply->setUserAgent($request->headers->get('User-Agent'));
+        $reply->setLikesCount(0);
+        $reply->setStatus('approved');
+
+        $entityManager->persist($reply);
+        $entityManager->flush();
+
+        $this->addFlash('success', 'Votre réponse a été ajoutée');
+        return $this->redirectToRoute('app_article_show', ['slug' => $parentComment->getArticle()->getSlug()]);
+    }
 }

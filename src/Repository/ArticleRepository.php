@@ -20,12 +20,16 @@ class ArticleRepository extends ServiceEntityRepository
     public function findArticlesPaginated(
         int $page = 1,
         ?string $categorySlug = null,
+        ?string $tagSlug = null,
         ?string $search = null,
         int $limit = 10
     ): Paginator {
         $query = $this->createQueryBuilder('a')
-            ->andWhere('a.is_published = true')
+            ->andWhere('a.published_at IS NOT NULL')
+            ->andWhere('a.published_at <= :now')
+            ->setParameter('now', new \DateTime())
             ->leftJoin('a.category', 'c')
+            ->leftJoin('a.tags', 't')
             ->orderBy('a.createdAt', 'DESC');
 
         if ($categorySlug) {
@@ -38,10 +42,31 @@ class ArticleRepository extends ServiceEntityRepository
                 ->setParameter('search', '%' . $search . '%');
         }
 
+        if ($tagSlug) {
+            $query->andWhere('t.slug = :tagSlug')
+                ->setParameter('tagSlug', $tagSlug);
+        }
+
         $query->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 
         return new Paginator($query);
+    }
+
+    public function findSimilarArticles(Article $article, int $limit = 3): array
+    {
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.category = :category')
+            ->andWhere('a.id != :id')
+            ->andWhere('a.published_at IS NOT NULL')
+            ->andWhere('a.published_at <= :now')
+            ->setParameter('category', $article->getCategory())
+            ->setParameter('id', $article->getId())
+            ->setParameter('now', new \DateTime())
+            ->orderBy('a.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 
     //    /**

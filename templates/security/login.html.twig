@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+{% set show_header = false %}
 
 {% block title %}Connexion{% endblock %}
 
@@ -42,8 +43,11 @@
                         <a href="{{ path('app_forgot_password_request') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
                             Mot de passe oublié ?
                         </a>
-                        <a href="{{ path('app_logout') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
-                            deconexion
+                    </div>
+
+                    <div class="text-sm">
+                        <a href="{{ path('app_register') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                            Créer un compte
                         </a>
                     </div>
                 </div>

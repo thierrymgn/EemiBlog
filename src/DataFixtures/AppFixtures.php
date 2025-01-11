@@ -79,7 +79,7 @@ class AppFixtures extends Fixture
             ->setPassword($this->passwordHasher->hashPassword($admin, 'admin123'))
             ->setVerified(true)
             ->setBanned(false)
-            ->setBio('Administrateur principal de WebMinds')
+            ->setBio('Administrateur principal de EemiBlog')
             ->setLocale('fr')
             ->setCreatedAt(new \DateTime())
             ->setUpdatedAt(new \DateTime());

@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Article;
+use App\Entity\Comment;
 use App\Form\ArticleType;
+use App\Form\UserCommentType;
 use App\Repository\ArticleRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -52,11 +54,47 @@ final class ArticleController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_article_show', methods: ['GET'])]
-    public function show(Article $article): Response
+    #[Route('/{slug}', name: 'app_article_show', methods: ['GET', 'POST'])]
+    public function show(string $slug, ArticleRepository $articleRepository, EntityManagerInterface $entityManager, Request $request): Response
     {
+        $article = $articleRepository->findOneBy(['slug' => $slug]);
+
+        if (!$article) {
+            throw $this->createNotFoundException('Article non trouvé');
+        }
+
+        $article->setViewCount($article->getViewCount() + 1);
+        $entityManager->flush();
+
+        $comment = new Comment();
+        $form = $this->createForm(UserCommentType::class, $comment);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $comment->setArticle($article);
+            $comment->setPublisher($this->getUser());
+            $comment->setCreatedAt(new \DateTimeImmutable());
+            $comment->setUpdatedAt(new \DateTimeImmutable());
+            $comment->setApproved(true);
+            $comment->setLevel(0);
+            $comment->setIpAddress($request->getClientIp());
+            $comment->setUserAgent($request->headers->get('User-Agent'));
+            $comment->setLikesCount(0);
+            $comment->setStatus('approved');
+
+            $entityManager->persist($comment);
+            $entityManager->flush();
+
+            $this->addFlash('success', 'Votre commentaire a été ajouté');
+            return $this->redirectToRoute('app_article_show', ['slug' => $article->getSlug()]);
+        }
+
+        $similarArticles = $articleRepository->findSimilarArticles($article);
+
         return $this->render('article/show.html.twig', [
             'article' => $article,
+            'similarArticles' => $similarArticles,
+            'commentForm' => $form,
         ]);
     }
 

@@ -1,10 +1,9 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}WebMinds Blog{% endblock %}
+{% block title %}Eemi Blog{% endblock %}
 
 {% block body %}
     <div class="container mx-auto px-4 py-8">
-        {# Barre de recherche et filtres #}
         <div class="mb-8">
             <form method="get" class="flex space-x-4">
                 <input type="text"
@@ -26,9 +25,32 @@
                     Filtrer
                 </button>
             </form>
+
+            {# Tags populaires #}
+            <div class="mt-4">
+                <h3 class="text-lg font-semibold mb-2">Tags</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for tag in tags %}
+                        <a href="{{ path('app_home', {tag: tag.slug}) }}"
+                           class="px-3 py-1 rounded-full text-sm
+                          {% if currentTag == tag.slug %}
+                              bg-indigo-600 text-white
+                          {% else %}
+                              bg-gray-100 text-gray-800 hover:bg-gray-200
+                          {% endif %}">
+                            {{ tag.name }}
+                        </a>
+                    {% endfor %}
+                    {% if currentTag %}
+                        <a href="{{ path('app_home') }}"
+                           class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm hover:bg-red-200">
+                            Réinitialiser
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
-        {# Liste des articles #}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for article in articles %}
                 <article class="border rounded-lg overflow-hidden shadow-lg bg-white">
@@ -53,7 +75,7 @@
                         <span class="text-sm text-gray-500">
                             {{ article.createdAt|date('d/m/Y') }}
                         </span>
-                            <a href="{{ path('app_article_show', {id: article.id}) }}"
+                            <a href="{{ path('app_article_show', {slug: article.slug}) }}"
                                class="text-indigo-600 hover:text-indigo-800">
                                 Lire la suite
                             </a>
@@ -63,7 +85,20 @@
             {% endfor %}
         </div>
 
-        {# Pagination #}
+        {% if articles|length == 0 %}
+            <div class="text-center py-12">
+                <p class="text-gray-600">
+                    Aucun article trouvé
+                    {% if currentTag %}pour le tag "{{ currentTag }}"{% endif %}
+                    {% if currentCategory %}dans la catégorie "{{ currentCategory }}"{% endif %}
+                    {% if search %}pour la recherche "{{ search }}"{% endif %}
+                </p>
+                <a href="{{ path('app_home') }}" class="text-indigo-600 hover:text-indigo-800">
+                    Voir tous les articles
+                </a>
+            </div>
+        {% endif %}
+
         {% if articles.count > 0 %}
             <div class="mt-8 flex justify-center space-x-2">
                 {% set pages = (articles|length / limit)|round(0, 'ceil') %}
