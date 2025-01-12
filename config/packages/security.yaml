@@ -42,11 +42,12 @@ security:
         - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/article/[ ^/ ]+$, roles: PUBLIC_ACCESS }
         - { path: ^/article, roles: ROLE_ADMIN }
+        - { path: ^/article/new, roles: ROLE_USER }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
         - { path: ^/reset-password, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: PUBLIC_ACCESS }
-        - { path: ^/profile, roles: PUBLIC_ACCESS }
+        - { path: ^/profile, roles: ROLE_USER }
         - { path: ^/user, roles: ROLE_ADMIN }
         - { path: ^/category, roles: ROLE_ADMIN }
         - { path: ^/media, roles: ROLE_ADMIN }
