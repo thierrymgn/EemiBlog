@@ -22,7 +22,7 @@ final class MediaController extends AbstractController
         if ($this->isGranted('ROLE_ADMIN')) {
             $medias = $mediaRepository->findAll();
         } else {
-            $medias = $mediaRepository->findBy(['user' => $this->getUser()]);
+            $medias = $mediaRepository->findBy(['customer' => $this->getUser()]);
         }
 
         return $this->render('media/index.html.twig', [

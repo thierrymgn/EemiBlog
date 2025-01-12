@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+{% set show_header = false %}
+
+{% block body %}
+    <div class="min-h-screen bg-gray-100">
+        <div class="fixed inset-y-0 left-0 w-64 bg-gray-800">
+            <div class="flex items-center justify-center h-16 px-4 bg-gray-900">
+                <h1 class="text-xl font-semibold text-white">WebMinds Admin</h1>
+            </div>
+            <nav class="mt-5 px-2">
+                <a href="{{ path('app_admin_dashboard') }}" class="group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-white {% if app.request.get('_route') == 'app_admin_dashboard' %}bg-gray-900{% else %}text-gray-300 hover:text-white hover:bg-gray-700{% endif %} focus:outline-none focus:bg-gray-700">
+                    <svg class="mr-4 h-6 w-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="{{ path('app_article_index') }}" class="mt-1 group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md {% if app.request.get('_route') starts with 'app_article_' %}text-white bg-gray-900{% else %}text-gray-300 hover:text-white hover:bg-gray-700{% endif %} focus:outline-none focus:bg-gray-700">
+                    Articles
+                </a>
+                <a href="{{ path('app_category_index') }}" class="mt-1 group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md {% if app.request.get('_route') starts with 'app_category_' %}text-white bg-gray-900{% else %}text-gray-300 hover:text-white hover:bg-gray-700{% endif %} focus:outline-none focus:bg-gray-700">
+                    Catégories
+                </a>
+                <a href="{{ path('app_user_index') }}" class="mt-1 group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md {% if app.request.get('_route') starts with 'app_user_' %}text-white bg-gray-900{% else %}text-gray-300 hover:text-white hover:bg-gray-700{% endif %} focus:outline-none focus:bg-gray-700">
+                    Utilisateurs
+                </a>
+                <a href="{{ path('app_admin_moderation') }}" class="mt-1 group flex items-center px-2 py-2 text-base leading-6 font-medium rounded-md text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:bg-gray-700">
+                    <svg class="mr-4 h-6 w-6 text-gray-300" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    Modération
+                </a>
+            </nav>
+        </div>
+
+        <div class="pl-64">
+            {% include 'partials/_header.html.twig' %}
+            <main class="flex-1 overflow-y-auto focus:outline-none p-8" tabindex="0">
+                {% block admin_content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+{% endblock %}

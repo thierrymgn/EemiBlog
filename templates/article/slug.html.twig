@@ -80,7 +80,7 @@
                         <a href="{{ path('app_article_show', {slug: similar.slug}) }}"
                            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                             {% if similar.featuredImage %}
-                                <img src="{{ asset(similar.featuredImage.path) }}"
+                                <img src="{{ asset(similar.featuredImage) }}"
                                      alt="{{ similar.title }}"
                                      class="w-full h-48 object-cover">
                             {% endif %}

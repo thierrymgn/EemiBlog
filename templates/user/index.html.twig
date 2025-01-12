@@ -1,59 +1,90 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin/base.html.twig' %}
 
-{% block title %}User index{% endblock %}
+{% block title %}Utilisateurs{% endblock %}
 
-{% block body %}
-    <h1>User index</h1>
+{% block admin_content %}
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-gray-900">Liste des utilisateurs</h2>
+            <a href="{{ path('app_user_new') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                Ajouter un utilisateur
+            </a>
+        </div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Email</th>
-                <th>Roles</th>
-                <th>Password</th>
-                <th>FirstName</th>
-                <th>LastName</th>
-                <th>Avatar</th>
-                <th>Bio</th>
-                <th>Is_banned</th>
-                <th>Last_login</th>
-                <th>Locale</th>
-                <th>CreatedAt</th>
-                <th>UpdatedAt</th>
-                <th>Is_verified</th>
-                <th>actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for user in users %}
-            <tr>
-                <td>{{ user.id }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.roles ? user.roles|json_encode : '' }}</td>
-                <td>{{ user.password }}</td>
-                <td>{{ user.firstName }}</td>
-                <td>{{ user.lastName }}</td>
-                <td>{{ user.avatar }}</td>
-                <td>{{ user.bio }}</td>
-                <td>{{ user.isBanned ? 'Yes' : 'No' }}</td>
-                <td>{{ user.lastLogin ? user.lastLogin|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ user.locale }}</td>
-                <td>{{ user.createdAt ? user.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ user.updatedAt ? user.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ user.isVerified ? 'Yes' : 'No' }}</td>
-                <td>
-                    <a href="{{ path('app_user_show', {'id': user.id}) }}">show</a>
-                    <a href="{{ path('app_user_edit', {'id': user.id}) }}">edit</a>
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="17">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôles</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                {% for user in users %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ user.firstname }} {{ user.lastname }}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ user.email }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% for role in user.roles %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if role == 'ROLE_ADMIN' %}bg-purple-100 text-purple-800
+                                        {% elseif role == 'ROLE_BANNED' %}bg-red-100 text-red-800
+                                        {% else %}bg-green-100 text-green-800{% endif %}">
+                                        {{ role|replace({'ROLE_': ''}) }}
+                                    </span>
+                            {% endfor %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if user.banned %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Banni
+                                    </span>
+                            {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Actif
+                                    </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <a href="{{ path('app_user_edit', {'id': user.id}) }}"
+                                   class="text-indigo-600 hover:text-indigo-900">Éditer</a>
 
-    <a href="{{ path('app_user_new') }}">Create new</a>
+                                {% if not user.banned %}
+                                    <form action="{{ path('app_admin_user_ban', {'id': user.id}) }}" method="POST" class="inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('ban' ~ user.id) }}">
+                                        <button type="submit"
+                                                onclick="return confirm('Êtes-vous sûr de vouloir bannir cet utilisateur ?')"
+                                                class="text-red-600 hover:text-red-900">
+                                            Bannir
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <form action="{{ path('app_admin_user_unban', {'id': user.id}) }}" method="POST" class="inline">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('unban' ~ user.id) }}">
+                                        <button type="submit"
+                                                class="text-green-600 hover:text-green-900">
+                                            Débannir
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}
