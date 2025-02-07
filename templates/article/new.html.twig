@@ -59,6 +59,25 @@
                     }) }}
                 </div>
 
+                <div class="flex justify-end space-x-2 mb-2">
+                    <button type="button"
+                            id="suggestTitlesBtn"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        Suggérer des titres
+                    </button>
+                    <button type="button"
+                            id="improveContentBtn"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                        </svg>
+                        Améliorer le contenu
+                    </button>
+                </div>
+
                 <div>
                     {{ form_label(form.tags, 'Tags', {'label_attr': {'class': 'block text-base font-medium text-gray-700 mb-4'}}) }}
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-6 bg-gray-50 rounded-lg border border-gray-200">
@@ -130,5 +149,152 @@
             </div>
         </div>
         {{ form_end(form) }}
+
+        <div id="suggestionsModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-gray-900">Suggestions de l'IA</h3>
+                    <button class="closeModal text-gray-400 hover:text-gray-500">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="suggestionsList" class="p-6 overflow-y-auto flex-1">
+                </div>
+
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                    <button class="closeModal px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="aiLoader" class="m-0 hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+                <p class="text-gray-700">L'IA analyse votre contenu...</p>
+            </div>
+        </div>
     </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const suggestTitlesBtn = document.getElementById('suggestTitlesBtn');
+            const improveContentBtn = document.getElementById('improveContentBtn');
+            const modal = document.getElementById('suggestionsModal');
+            const suggestionsList = document.getElementById('suggestionsList');
+            const loader = document.getElementById('aiLoader');
+
+            const toggleLoader = (show) => {
+                loader.classList.toggle('hidden', !show);
+            };
+
+            suggestTitlesBtn.addEventListener('click', async () => {
+                const content = document.getElementById('article_content').value;
+                suggestTitlesBtn.disabled = true;
+                toggleLoader(true);
+
+                try {
+                    const response = await fetch('/admin/ai-assistant/suggest-titles', {
+                        method: 'POST',
+                        body: JSON.stringify({ content }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+                    displaySuggestions(data.titles);
+                } finally {
+                    suggestTitlesBtn.disabled = false;
+                    toggleLoader(false);
+                }
+            });
+
+            improveContentBtn.addEventListener('click', async () => {
+                const contentArea = document.getElementById('article_content');
+                const content = contentArea.value;
+                improveContentBtn.disabled = true;
+                toggleLoader(true);
+
+                try {
+                    const response = await fetch('/admin/ai-assistant/improve-content', {
+                        method: 'POST',
+                        body: JSON.stringify({ content }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+                    contentArea.value = data.content;
+
+                    displayImprovement(data);
+                } finally {
+                    improveContentBtn.disabled = false;
+                    toggleLoader(false);
+                }
+            });
+
+            function displayImprovement(data) {
+                const html = `
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">Résumé</h4>
+                            <p class="text-gray-600">${data.summary}</p>
+                        </div>
+
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">Score SEO</h4>
+                            <div class="flex items-center space-x-2">
+                                <div class="text-2xl font-bold ${data.seo_score.score > 80 ? 'text-green-600' : data.seo_score.score > 60 ? 'text-yellow-600' : 'text-red-600'}">
+                                    ${data.seo_score.score}/100
+                                </div>
+                                <p class="text-gray-600">${data.seo_score.explanation}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">Suggestions d'amélioration</h4>
+                            <ul class="list-disc pl-5 space-y-2">
+                                ${data.suggestions.map(s => `<li class="text-gray-600">${s}</li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">Conseils de lisibilité</h4>
+                            <ul class="list-disc pl-5 space-y-2">
+                                ${data.readability_tips.map(tip => `<li class="text-gray-600">${tip}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+                suggestionsList.innerHTML = html;
+                modal.classList.remove('hidden');
+            }
+
+            function displaySuggestions(titles) {
+                suggestionsList.innerHTML = titles.map(title => `
+                    <div class="p-3 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer">
+                        ${title}
+                    </div>
+                `).join('');
+
+                modal.classList.remove('hidden');
+            }
+
+            document.querySelectorAll('.closeModal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                });
+            });
+        });
+    </script>
 {% endblock %}

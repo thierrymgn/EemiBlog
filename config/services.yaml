@@ -28,3 +28,7 @@ services:
     App\EventListener\UserBannedListener:
         tags:
             - { name: kernel.event_listener, event: kernel.request }
+
+    App\Service\AIWritingAssistant:
+        arguments:
+            $apiKey: '%env(OPENAI_API_KEY)%'
