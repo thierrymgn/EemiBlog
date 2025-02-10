@@ -1,6 +1,8 @@
 <?php
 namespace App\Service;
 
+use App\DTO\ArticleImprovement;
+use App\DTO\TitleSuggestions;
 use OpenAI;
 
 class AIWritingAssistant
@@ -12,22 +14,38 @@ class AIWritingAssistant
         $this->client = OpenAI::client($apiKey);
     }
 
-    public function suggestTitles(string $content): array
+    public function suggestTitles(string $content): TitleSuggestions
     {
         $response = $this->client->chat()->create([
             'model' => 'gpt-4o-mini',
             'messages' => [[
                 'role' => 'system',
-                'content' => 'Tu es un expert en rédaction de titres. Je veux que tu me retournes UNIQUEMENT un JSON avec un tableau "titles" contenant 5 suggestions de titres pour cet article. Format attendu: {"titles": ["titre 1", "titre 2", "titre 3", "titre 4", "titre 5"]}'
+                'content' => 'Tu es un expert en rédaction de titres. Génère 5 suggestions de titres accrocheurs pour cet article.'
             ], [
                 'role' => 'user',
                 'content' => $content
-            ]]
+            ]],
+            'response_format' => [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'title_suggestions',
+                    'strict' => true,
+                    'schema' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'titles' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'string']
+                            ]
+                        ],
+                        'required' => ['titles'],
+                        'additionalProperties' => false
+                    ]
+                ]]
         ]);
 
-        $jsonResponse = json_decode($response->choices[0]->message->content, true);
-        dump($jsonResponse);
-        return $jsonResponse['titles'] ?? [];
+        $data = json_decode($response->choices[0]->message->content, true);
+        return new TitleSuggestions(titles: $data['titles']);
     }
 
     public function improveContent(string $content): mixed
@@ -40,31 +58,53 @@ class AIWritingAssistant
                1. Optimisation SEO : Améliore le texte pour le référencement naturel sans le surcharger de mots-clés
                2. Structure : Assure une structure claire avec des transitions fluides
                3. Style : Rends le texte plus engageant et professionnel tout en gardant un ton naturel
-               4. Longueur : Conserve la longueur originale mais optimise chaque phrase
-    
-               Retourne UNIQUEMENT un JSON structuré avec :
-               - "content": le texte amélioré
-               - "summary": un résumé concis en 2-3 phrases
-               - "suggestions": un tableau de 3-4 suggestions d\'améliorations spécifiques
-               - "seo_score": une note sur 100 avec une brève explication
-               - "readability_tips": des conseils pour améliorer la lisibilité
-    
-               Format JSON attendu:
-               {
-                   "content": "texte amélioré",
-                   "summary": "résumé concis",
-                   "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
-                   "seo_score": {"score": 85, "explanation": "explication"},
-                   "readability_tips": ["conseil 1", "conseil 2"]
-               }'
+               4. Longueur : Conserve la longueur originale mais optimise chaque phrase'
             ], [
                 'role' => 'user',
                 'content' => $content
-            ]]
+            ]],
+            'response_format' => [
+                'type' => 'json_schema',
+                'json_schema' => [
+                    'name' => 'article_improvement',
+                    'strict' => true,
+                    'schema' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'content' => ['type' => 'string'],
+                            'summary' => ['type' => 'string'],
+                            'suggestions' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'string']
+                            ],
+                            'seo_score' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'score' => ['type' => 'number'],
+                                    'explanation' => ['type' => 'string'],
+                                ],
+                                'required' => ['score', 'explanation'],
+                                'additionalProperties' => false
+                            ],
+                            'readability_tips' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'string']
+                            ]
+                        ],
+                        'required' => ['content', 'summary', 'suggestions', 'seo_score', 'readability_tips'],
+                        'additionalProperties' => false
+                    ]
+                ]
+            ]
         ]);
 
-        dump($response->choices);
-
-        return json_decode($response->choices[0]->message->content, true);
+        $data = json_decode($response->choices[0]->message->content, true);
+        return new ArticleImprovement(
+            content: $data['content'],
+            summary: $data['summary'],
+            suggestions: $data['suggestions'],
+            seoScore: $data['seo_score'],
+            readabilityTips: $data['readability_tips']
+        );
     }
 }

@@ -15,17 +15,33 @@ class AIAssistantController extends AbstractController
     public function suggestTitles(Request $request, AIWritingAssistant $assistant): JsonResponse
     {
         $content = json_decode($request->getContent(), true)['content'] ?? '';
-        $titles = $assistant->suggestTitles($content);
 
-        return $this->json(['titles' => $titles]);
+        try {
+            $suggestions = $assistant->suggestTitles($content);
+
+            return $this->json(['titles' => $suggestions->titles]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     #[Route('/improve-content', name: 'app_ai_improve_content', methods: ['POST'])]
     public function improveContent(Request $request, AIWritingAssistant $assistant): JsonResponse
     {
         $content = json_decode($request->getContent(), true)['content'] ?? '';
-        $result = $assistant->improveContent($content);
 
-        return $this->json($result);
+        try {
+            $improvement = $assistant->improveContent($content);
+
+            return $this->json([
+                'content' => $improvement->content,
+                'summary' => $improvement->summary,
+                'suggestions' => $improvement->suggestions,
+                'seo_score' => $improvement->seoScore,
+                'readability_tips' => $improvement->readabilityTips
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

@@ -190,13 +190,34 @@
             const modal = document.getElementById('suggestionsModal');
             const suggestionsList = document.getElementById('suggestionsList');
             const loader = document.getElementById('aiLoader');
+            const contentArea = document.getElementById('article_content');
 
             const toggleLoader = (show) => {
                 loader.classList.toggle('hidden', !show);
             };
 
+            function updateButtonsState() {
+                const isEmpty = !contentArea.value.trim();
+                suggestTitlesBtn.disabled = isEmpty;
+                improveContentBtn.disabled = isEmpty;
+
+                [suggestTitlesBtn, improveContentBtn].forEach(btn => {
+                    if (isEmpty) {
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                        btn.classList.remove('hover:bg-indigo-700');
+                    } else {
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        btn.classList.add('hover:bg-indigo-700');
+                    }
+                });
+            }
+
+            updateButtonsState();
+
+            contentArea.addEventListener('input', updateButtonsState);
+
             suggestTitlesBtn.addEventListener('click', async () => {
-                const content = document.getElementById('article_content').value;
+                const content = contentArea.value;
                 suggestTitlesBtn.disabled = true;
                 toggleLoader(true);
 
@@ -218,7 +239,6 @@
             });
 
             improveContentBtn.addEventListener('click', async () => {
-                const contentArea = document.getElementById('article_content');
                 const content = contentArea.value;
                 improveContentBtn.disabled = true;
                 toggleLoader(true);
