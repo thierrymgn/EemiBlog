@@ -23,7 +23,25 @@
                         </a>
                     {% endif %}
 
-                    <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ article.title }}</h1>
+                    <h1 id="articleTitle" class="text-4xl font-bold text-gray-900 mb-4">{{ article.title }}</h1>
+
+                    <div class="relative w-fit mb-3" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center px-4 py-2 bg-white border rounded-md shadow-sm">
+                            <span id="currentLanguage">FR</span>
+                            <svg class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <div x-show="open" @click.away="open = false" class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg">
+                            <button onclick="translatePage('en')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                                English
+                            </button>
+                            <button onclick="translatePage('es')" class="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                                Español
+                            </button>
+                        </div>
+                    </div>
 
                     <div class="flex items-center space-x-4 text-gray-600">
                         <div class="flex items-center">
@@ -54,7 +72,7 @@
                     </div>
                 </header>
 
-                <div class="prose max-w-none mb-8">
+                <div id="articleContent" class="prose max-w-none mb-8">
                     {{ article.content|raw }}
                 </div>
 
@@ -202,11 +220,55 @@
             </div>
         </section>
 
+        <div id="aiLoader" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+                <p class="text-gray-700">Traduction en cours...</p>
+            </div>
+        </div>
+
         {% block javascripts %}
+            {{ parent() }}
             <script>
                 function showReplyForm(formId) {
                     const form = document.getElementById(formId);
                     form.classList.toggle('hidden');
+                }
+
+                async function translatePage(language) {
+                    const loader = document.getElementById('aiLoader');
+                    if (!loader) {
+                        console.error('Loader not found');
+                        return;
+                    }
+
+                    loader.classList.remove('hidden');
+
+                    try {
+                        const response = await fetch('/api/translate', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                articleId: '{{ article.id }}',
+                                language: language
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        console.log(data);
+
+                        document.getElementById('articleTitle').textContent = data.title;
+                        document.getElementById('articleContent').innerHTML = data.content;
+                        document.getElementById('currentLanguage').textContent = language.toUpperCase();
+
+                    } catch (error) {
+                        console.error('Erreur de traduction:', error);
+                    } finally {
+                        loader.classList.add('hidden');
+                    }
                 }
             </script>
         {% endblock %}

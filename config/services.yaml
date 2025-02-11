@@ -32,3 +32,7 @@ services:
     App\Service\AIWritingAssistant:
         arguments:
             $apiKey: '%env(OPENAI_API_KEY)%'
+
+    App\Service\AITranslationService:
+        arguments:
+            $apiKey: '%env(OPENAI_API_KEY)%'

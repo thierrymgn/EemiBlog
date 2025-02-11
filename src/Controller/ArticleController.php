@@ -77,7 +77,7 @@ final class ArticleController extends AbstractController
             $entityManager->persist($article);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_article_index');
+            return $this->redirectToRoute('app_home');
         }
 
         return $this->render('article/new.html.twig', [

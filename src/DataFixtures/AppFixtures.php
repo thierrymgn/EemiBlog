@@ -191,7 +191,8 @@ class AppFixtures extends Fixture
                     ->setCustomer($users[array_rand($users)])
                     ->setCategory($category)
                     ->setMetaTitle($this->faker->words(3, true))
-                    ->setMetaDescription($this->faker->sentence());
+                    ->setMetaDescription($this->faker->sentence())
+                    ->setFeaturedImage('https://placehold.co/600x400');
 
                 $numTags = rand(2, 4);
                 $shuffledTags = $tags;

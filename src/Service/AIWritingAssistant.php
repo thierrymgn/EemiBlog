@@ -41,7 +41,8 @@ class AIWritingAssistant
                         'required' => ['titles'],
                         'additionalProperties' => false
                     ]
-                ]]
+                ]
+            ]
         ]);
 
         $data = json_decode($response->choices[0]->message->content, true);
